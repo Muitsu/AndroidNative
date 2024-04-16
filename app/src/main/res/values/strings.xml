@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">MessageApp</string>
+    <string name="next_screen">Go to next screen</string>
+</resources>
