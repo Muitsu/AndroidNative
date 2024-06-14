@@ -23,12 +23,13 @@ public class MainViewModel extends ViewModel {
     }
 
     public String getData() {
-        count = count + 1;
+        count += 1;
         if (data == null) {
             data = fetchDataFromApi();
         }
         return data + count;
     }
+    
 
     private String fetchDataFromApi() {
         Log.d(TAG, "Fetching data");
