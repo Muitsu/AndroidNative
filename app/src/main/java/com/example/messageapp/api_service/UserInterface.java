@@ -1,5 +1,7 @@
 package com.example.messageapp.api_service;
 
+import java.util.List;
+
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -10,10 +12,10 @@ import retrofit2.http.Query;
 public interface UserInterface {
 
     @GET("/users")
-    Call<ResponseBody> getAllUser();
+    Call<List<UserModel.User>> getAllUser();
 
 
-    @GET("/posts/1")
-    Call<ResponseBody> getUserById(@Query("UserId") int userId);
+    @GET("/users/{id}")
+    Call<UserModel.User> getUserById(@Path("id") int userId);
 
 }

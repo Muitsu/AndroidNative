@@ -1,21 +1,16 @@
 package com.example.messageapp;
 
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.lifecycle.ViewModelProvider;
 
+import com.example.messageapp.api_service.UserModel;
 import com.example.messageapp.api_service.UserRepository;
 import com.example.messageapp.databinding.ActivityMainBinding;
 import com.example.messageapp.navigation.Navigator;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
-import model.MainViewModel;
+import com.example.messageapp.view_model.MainViewModel;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -42,14 +37,9 @@ public class MainActivity extends AppCompatActivity {
     private void initializeViews() {
         binding.nextBtn.setOnClickListener(view -> navigateToSecondActivity());
         binding.skipBtn.setOnClickListener(view -> {
-            UserRepository.getUsers(
+            UserRepository.getUserById(
                     responseData -> {
-                        try {
-                            AppLog.log(responseData.string(), "CALL API");
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-
+                        AppLog.log(responseData.toJson(), "CALL API");
                     },
                     errorMessage -> {
                         AppLog.log(errorMessage, "CALL API");

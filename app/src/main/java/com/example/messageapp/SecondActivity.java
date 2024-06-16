@@ -5,7 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import model.MainViewModel;
+import com.example.messageapp.view_model.MainViewModel;
 
 public class SecondActivity extends AppCompatActivity {
 

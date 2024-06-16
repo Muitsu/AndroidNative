@@ -1,4 +1,4 @@
-package model;
+package com.example.messageapp.view_model;
 
 import android.util.Log;
 
@@ -29,7 +29,7 @@ public class MainViewModel extends ViewModel {
         }
         return data + count;
     }
-    
+
 
     private String fetchDataFromApi() {
         Log.d(TAG, "Fetching data");

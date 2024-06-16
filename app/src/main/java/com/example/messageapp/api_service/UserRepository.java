@@ -1,23 +1,17 @@
 package com.example.messageapp.api_service;
 
-import androidx.annotation.NonNull;
-
-import com.example.messageapp.AppLog;
-
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
-import okhttp3.ResponseBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import java.util.List;
 
 public class UserRepository {
 
     // Initialize apiService as a static variable
-    private static final UserInterface apiService = ApiClient.getClient().create(UserInterface.class);
-    public static void getUsers(ApiClient.SuccessAPI<ResponseBody> onSuccess, ApiClient.ErrorAPI onError) {
-        ApiClient.executeCall(apiService.getAllUser(), onSuccess, onError);
+    private static final UserInterface userRepo = ApiClient.getClient().create(UserInterface.class);
+
+    public static void getUsers(ApiClient.SuccessAPI<List<UserModel.User>> onSuccess, ApiClient.ErrorAPI onError) {
+        ApiClient.executeCall(userRepo.getAllUser(), onSuccess, onError);
     }
 
+    public static void getUserById(ApiClient.SuccessAPI<UserModel.User> onSuccess, ApiClient.ErrorAPI onError) {
+        ApiClient.executeCall(userRepo.getUserById(1), onSuccess, onError);
+    }
 }
