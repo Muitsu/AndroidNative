@@ -9,6 +9,12 @@ import lombok.Data;
 
 public class UserModel {
 
+    // Method to convert List<User> to JSON
+    public static String fromListToJson(List<User> userList) {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(userList);
+    }
+
     @Data
     public static class Address {
         private String street;
@@ -89,11 +95,5 @@ public class UserModel {
             Gson gson = new Gson();
             return gson.toJson(this);
         }
-    }
-
-    // Method to convert List<User> to JSON
-    public static String userListToJson(List<User> userList) {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        return gson.toJson(userList);
     }
 }

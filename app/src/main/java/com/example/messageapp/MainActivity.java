@@ -37,9 +37,9 @@ public class MainActivity extends AppCompatActivity {
     private void initializeViews() {
         binding.nextBtn.setOnClickListener(view -> navigateToSecondActivity());
         binding.skipBtn.setOnClickListener(view -> {
-            UserRepository.getUserById(
+            UserRepository.getUsers(
                     responseData -> {
-                        AppLog.log(responseData.toJson(), "CALL API");
+                        AppLog.log(UserModel.fromListToJson(responseData), "CALL API");
                     },
                     errorMessage -> {
                         AppLog.log(errorMessage, "CALL API");
