@@ -5,20 +5,26 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import com.example.messageapp.databinding.ActivitySecondBinding;
 import com.example.messageapp.view_model.MainViewModel;
 
 public class SecondActivity extends AppCompatActivity {
 
-    TextView titleTxt;
+    ActivitySecondBinding binding;
     MainViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_second);
+        binding = ActivitySecondBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         viewModel = MainViewModel.getInstance();
-        titleTxt = findViewById(R.id.titleText);
-        titleTxt.setText(viewModel.getData());
-
+        binding.titleText.setText(viewModel.getData());
+        binding.increaseBtn.setOnClickListener(click -> {
+            viewModel.increaseCounter();
+        });
+        viewModel.watchCounter().observe(this, data -> {
+            binding.counterText.setText(data);
+        });
     }
 }

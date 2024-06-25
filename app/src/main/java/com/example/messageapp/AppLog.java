@@ -16,5 +16,9 @@ public class AppLog {
     public static void log(String msg, String tag) {
         Log.i(tag, msg);
     }
+
+    public static void log(String msg) {
+        log(msg, "DEVELOPMENT");
+    }
 }
 

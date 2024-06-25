@@ -33,11 +33,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
         permissionManager = new PermissionManager(this);
         if (!permissionManager.checkPermissions()) {
-            permissionManager.requestPermissions(this);
+            permissionManager.showPermissionsDeniedDialog(this);
         }
         // Initialize UI components
         initializeViews();
-        // Fetch data from API
     }
 
     // Initialize UI components
@@ -46,10 +45,10 @@ public class MainActivity extends AppCompatActivity {
         binding.skipBtn.setOnClickListener(view -> {
             UserRepository.getUsers(
                     responseData -> {
-                        AppLog.log(UserModel.fromListToJson(responseData), "CALL API");
+                        AppLog.log(UserModel.fromListToJson(responseData));
                     },
                     errorMessage -> {
-                        AppLog.log(errorMessage, "CALL API");
+                        AppLog.log(errorMessage);
                     }
             );
         });
@@ -69,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Navigate to SecondActivity
     private void navigateToSecondActivity() {
-        String text = viewModel.getData();
+        viewModel.fetchDataFromApi();
         Navigator.push(this, SecondActivity.class);
     }
 }
