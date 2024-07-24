@@ -43,6 +43,10 @@ public class ApiClient {
         return getClient(null, null);
     }
 
+    public static Retrofit getClient(String baseUrl) {
+        return getClient(baseUrl, null);
+    }
+
     public static Retrofit getClientWithHeaders(Map<String, String> headers) {
         return getClient(null, headers);
     }
