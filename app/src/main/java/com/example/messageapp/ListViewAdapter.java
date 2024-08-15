@@ -19,7 +19,7 @@ public class ListViewAdapter extends RecyclerView.Adapter<ListTileHolder> {
     OnItemClickListener onClick;
 
     public interface OnItemClickListener {
-        void onItemClick(int position);
+        void onItemClick(int index);
     }
 
     public ListViewAdapter(List<MessageModel> messages, Context context, OnItemClickListener onClick) {
@@ -39,11 +39,11 @@ public class ListViewAdapter extends RecyclerView.Adapter<ListTileHolder> {
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ListTileHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ListTileHolder holder, int index) {
         holder.itemView.setOnClickListener((onCLick) -> {
-            onClick.onItemClick(position);
+            onClick.onItemClick(index);
         });
-        holder.bindMessage(messages.get(position));
+        holder.bindMessage(messages.get(index));
     }
 
     @Override
