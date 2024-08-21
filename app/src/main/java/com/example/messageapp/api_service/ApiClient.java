@@ -1,154 +1,194 @@
 package com.example.messageapp.api_service;
 
-import android.annotation.SuppressLint;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 
-import androidx.annotation.NonNull;
+import com.google.gson.JsonObject;
 
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class ApiClient {
+    private static final String TAG = "ApiClient";
+    private final OkHttpClient client;
 
-    public static final String BASE_URL = "https://jsonplaceholder.typicode.com";
+    private final ExecutorService executorService;
+    private final Handler mainHandler;
 
-    public static Retrofit getClient(String baseUrl, final Map<String, String> headers, boolean isByPassSSL) {
-        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+    private final String baseUrl = "https://jsonplaceholder.typicode.com";
+    private final Map<String, String> _commonHeaders = new HashMap<String, String>() {{
+        put("Content-Type", "application/json");
+        put("Accept", "application/json");
+    }};
 
-        // Call the method to bypass SSL if the flag is true
-        if (isByPassSSL) {
-            bypassSSLValidation(httpClient);
-        }
-
-        if (headers != null && !headers.isEmpty()) {
-            httpClient.addInterceptor(chain -> {
-                Request original = chain.request();
-                Request.Builder requestBuilder = original.newBuilder();
-                headers.forEach(requestBuilder::header);
-                Request request = requestBuilder.build();
-                return chain.proceed(request);
-            });
-        }
-        OkHttpClient client = httpClient.build();
-
-        return new Retrofit.Builder()
-                .baseUrl(baseUrl != null ? baseUrl : BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .client(client)
-                .build();
-
+    public ApiClient() {
+        client = new OkHttpClient();
+        executorService = Executors.newSingleThreadExecutor();
+        mainHandler = new Handler(Looper.getMainLooper());
     }
 
-    // Private method to configure SSL bypass
-    private static void bypassSSLValidation(OkHttpClient.Builder httpClient) {
-        try {
-            @SuppressLint("CustomX509TrustManager") TrustManager[] trustAllCerts = new TrustManager[]{
-                    new X509TrustManager() {
-                        @SuppressLint("TrustAllX509TrustManager")
-                        @Override
-                        public void checkClientTrusted(X509Certificate[] chain, String authType) {
-                        }
-
-                        @SuppressLint("TrustAllX509TrustManager")
-                        @Override
-                        public void checkServerTrusted(X509Certificate[] chain, String authType) {
-                        }
-
-                        @Override
-                        public X509Certificate[] getAcceptedIssuers() {
-                            return new X509Certificate[0];
-                        }
-                    }
-            };
-
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-
-            httpClient.sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustAllCerts[0]);
-            httpClient.hostnameVerifier((hostname, session) -> true);
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static Retrofit getClient() {
-        return getClient(null, null, false);
-    }
-
-    //Client with byPass SSL
-    public static Retrofit getClient(boolean isByPassSSL) {
-        return getClient(null, null, isByPassSSL);
-    }
-
-    //Client with baseUrl
-    public static Retrofit getClient(String baseUrl) {
-        return getClient(baseUrl, null, false);
-    }
-
-    //Client with [baseUrl,byPass SSL]
-    public static Retrofit getClient(String baseUrl, boolean isByPassSSL) {
-        return getClient(baseUrl, null, isByPassSSL);
-    }
-
-    //Client with [headers]
-    public static Retrofit getClientWithHeaders(Map<String, String> headers) {
-        return getClient(null, headers, false);
-    }
-
-    //Client with [headers,byPass SSL]
-    public static Retrofit getClientWithHeaders(Map<String, String> headers, boolean isByPassSSL) {
-        return getClient(null, headers, isByPassSSL);
-    }
-
-    //Client with [baseUrl, headers]
-    public static Retrofit getClientWithHeaders(String baseUrl, Map<String, String> headers) {
-        return getClient(baseUrl, headers, false);
-    }
-
-    //Client with [baseUrl, headers,byPass SSL]
-    public static Retrofit getClientWithHeaders(String baseUrl, Map<String, String> headers, boolean isByPassSSL) {
-        return getClient(baseUrl, headers, isByPassSSL);
-    }
-
-    public static <T> void executeCall(Call<T> call, SuccessAPI<T> success, ErrorAPI errorCallback) {
-        call.enqueue(new Callback<T>() {
-            @Override
-            public void onResponse(@NonNull Call<T> call, @NonNull Response<T> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    success.onSuccess(response.body());
-                } else {
-                    errorCallback.onError("Unsuccessful response: " + response.code());
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<T> call, @NonNull Throwable t) {
-                errorCallback.onError(t.getMessage());
+    // Asynchronous GET request
+    public void get(String endpoint, Map<String, String> headers, boolean includeToken, OnPre pre, OnPost onSuccess, OnFail onFailed) {
+        //runOnMainThread(() -> pre.onPreExecute());
+        runOnMainThread(pre::onPreExecute);
+        final String token = getAuthToken(includeToken);
+        final Map<String, String> mHeader = mergeHeaders(headers, token);
+        executorService.execute(() -> {
+            try {
+                String result = executeGet(baseUrl + endpoint, mHeader);
+                runOnMainThread(() -> onSuccess.onSuccess(result));
+            } catch (IOException e) {
+                runOnMainThread(() -> onFailed.onFailure(e));
             }
         });
     }
 
-    @FunctionalInterface
-    public interface SuccessAPI<T> {
-        void onSuccess(T responseData);
+    // Asynchronous POST request
+    public void post(String endpoint, JsonObject body, Map<String, String> headers, boolean includeToken, OnPre pre, OnPost onSuccess, OnFail onFailed) {
+        runOnMainThread(pre::onPreExecute);
+        final String token = getAuthToken(includeToken);
+        final Map<String, String> mHeader = mergeHeaders(headers, token);
+        executorService.execute(() -> {
+            try {
+                String result = executeRequestWithBody("POST", baseUrl + endpoint, body, mHeader);
+                runOnMainThread(() -> onSuccess.onSuccess(result));
+            } catch (IOException e) {
+                runOnMainThread(() -> onFailed.onFailure(e));
+            }
+        });
     }
 
-    @FunctionalInterface
-    public interface ErrorAPI {
-        void onError(String errorMessage);
+    // Asynchronous PUT request
+    public void put(String endpoint, JsonObject body, Map<String, String> headers, boolean includeToken, OnPre pre, OnPost onSuccess, OnFail onFailed) {
+        runOnMainThread(pre::onPreExecute);
+        final String token = getAuthToken(includeToken);
+        final Map<String, String> mHeader = mergeHeaders(headers, token);
+        executorService.execute(() -> {
+            try {
+                String result = executeRequestWithBody("PUT", baseUrl + endpoint, body, mHeader);
+                runOnMainThread(() -> onSuccess.onSuccess(result));
+            } catch (IOException e) {
+                runOnMainThread(() -> onFailed.onFailure(e));
+            }
+        });
     }
+
+    // Asynchronous DELETE request
+    public void delete(String endpoint, JsonObject body, Map<String, String> headers, boolean includeToken, OnPre pre, OnPost onSuccess, OnFail onFailed) {
+        runOnMainThread(pre::onPreExecute);
+        final String token = getAuthToken(includeToken);
+        final Map<String, String> mHeader = mergeHeaders(headers, token);
+        executorService.execute(() -> {
+            try {
+                String result = executeRequestWithBody("DELETE", baseUrl + endpoint, body, mHeader);
+                runOnMainThread(() -> onSuccess.onSuccess(result));
+            } catch (IOException e) {
+                runOnMainThread(() -> onFailed.onFailure(e));
+            }
+        });
+    }
+
+    //Execute on Background
+    private String executeGet(String url, Map<String, String> headers) throws IOException {
+        //Http Request Builder for GET
+        Request.Builder requestBuilder = new Request.Builder().url(url).get();
+        //Http Add Header
+        if (headers != null) {
+            for (Map.Entry<String, String> header : headers.entrySet()) {
+                requestBuilder.addHeader(header.getKey(), header.getValue());
+            }
+        }
+        Request request = requestBuilder.build();
+        return executeRequest(request);
+    }
+
+    //Execute on Background
+    private String executeRequestWithBody(String methodType, String url, JsonObject body, Map<String, String> headers) throws IOException {
+        MediaType JSON = MediaType.get("application/json; charset=utf-8");
+        RequestBody requestBody = RequestBody.create(JSON, body.toString());
+
+        //Http Request Builder
+        Request.Builder requestBuilder = new Request.Builder().url(url);
+
+        //Http Add Header
+        if (headers != null) {
+            for (Map.Entry<String, String> header : headers.entrySet()) {
+                requestBuilder.addHeader(header.getKey(), header.getValue());
+            }
+        }
+
+        switch (methodType) {
+            case "POST":
+                requestBuilder.post(requestBody);
+                break;
+            case "PUT":
+                requestBuilder.put(requestBody);
+                break;
+            case "DELETE":
+                requestBuilder.delete(requestBody);
+                break;
+        }
+
+        Request request = requestBuilder.build();
+        return executeRequest(request);
+    }
+
+    //Execute on Background
+    private String executeRequest(Request request) throws IOException {
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                return response.body().string();
+            } else {
+                Log.e(TAG, "Request failed with code: " + response.code() + " and message: " + response.message());
+                return null;
+            }
+        }
+    }
+
+    private Map<String, String> mergeHeaders(Map<String, String> headers, String authToken) {
+        Map<String, String> mergedHeaders = new HashMap<>(_commonHeaders);
+        if (headers != null) {
+            mergedHeaders.putAll(headers);
+        }
+        if (authToken != null && !authToken.isEmpty()) {
+            mergedHeaders.put("Authorization", "Bearer " + authToken);
+        }
+        return mergedHeaders;
+    }
+
+    //GET TOKEN FROM PREFERENCE
+    String getAuthToken(boolean includeToken) {
+        if (!includeToken) return null;
+        // Retrieve and return the token from preferences
+        return null;
+    }
+
+    //Interceptor between UI thread and Background
+    private void runOnMainThread(Runnable runnable) {
+        mainHandler.post(runnable);
+    }
+
+
+    public interface OnPre {
+        void onPreExecute();
+    }
+
+    public interface OnPost {
+        void onSuccess(String response);
+    }
+
+    public interface OnFail {
+        void onFailure(Exception e);
+    }
+
 }

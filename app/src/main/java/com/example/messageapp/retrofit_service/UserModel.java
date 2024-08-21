@@ -1,4 +1,4 @@
-package com.example.messageapp.api_service;
+package com.example.messageapp.retrofit_service;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

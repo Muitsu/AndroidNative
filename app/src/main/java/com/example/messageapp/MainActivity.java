@@ -8,8 +8,9 @@ import androidx.annotation.NonNull;
 
 import android.widget.Toast;
 
-import com.example.messageapp.api_service.UserModel;
-import com.example.messageapp.api_service.UserRepository;
+import com.example.messageapp.retrofit_service.UserModel;
+import com.example.messageapp.retrofit_service.UserRepository;
+import com.example.messageapp.api_service.ProfileRepository;
 import com.example.messageapp.databinding.ActivityMainBinding;
 import com.example.messageapp.navigation.Navigator;
 
@@ -51,6 +52,17 @@ public class MainActivity extends AppCompatActivity {
                         AppLog.log(errorMessage);
                     }
             );
+        });
+        binding.btnProfile.setOnClickListener(v -> {
+            ProfileRepository.getProfile(
+                    () -> {
+                        //TODO PRE EXECUTE
+                    }, (success) -> {
+                        //TODO ON SUCCESS
+                    }, (errorMessage) -> {
+                        //TODO ON FAILED
+                    });
+
         });
     }
 
