@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 
 import android.widget.Toast;
 
+import com.example.messageapp.notification.NotificationService;
 import com.example.messageapp.retrofit_service.UserModel;
 import com.example.messageapp.retrofit_service.UserRepository;
 import com.example.messageapp.api_service.ProfileRepository;
@@ -62,6 +63,16 @@ public class MainActivity extends AppCompatActivity {
                     }, (errorMessage) -> {
                         //TODO ON FAILED
                     });
+
+        });
+
+        binding.btnShowNoti.setOnClickListener(v -> {
+            NotificationService.show(1, "Halu", "Yeayyyy");
+        });
+        binding.btnSchedule.setOnClickListener(v -> {
+            // Schedule a notification to be shown 10 seconds from now
+            long triggerAtMillis = System.currentTimeMillis() + 10000;
+            NotificationService.showScheduled(1, "Scheduled Notification", "This will show after 10 seconds", triggerAtMillis);
 
         });
     }

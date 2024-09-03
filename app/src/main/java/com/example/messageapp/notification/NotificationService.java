@@ -1,12 +1,19 @@
 package com.example.messageapp.notification;
 
 import android.annotation.SuppressLint;
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Build;
+import android.provider.Settings;
+import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.NotificationCompat;
 
 public class NotificationService {
@@ -60,6 +67,51 @@ public class NotificationService {
 
     // Static method to cancel notification using stored context
     public static void cancel(int notificationId) {
+        if (instance == null) {
+            throw new IllegalStateException("NotificationService is not initialized. Call initInstance() first.");
+        }
+
+        instance.notificationManager.cancel(notificationId);
+    }
+
+    // New method to schedule a notification
+    public static void showScheduled(int notificationId, String title, String message, long triggerAtMillis) {
+        if (instance == null) {
+            throw new IllegalStateException("NotificationService is not initialized. Call initialize() first.");
+        }
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        // Check if the app can schedule exact alarms
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+                // Request permission to schedule exact alarms
+                new AlertDialog.Builder(context)
+                        .setTitle("Exact Alarm Permission Needed")
+                        .setMessage("This app requires permission to schedule exact alarms. Do you want to enable it?")
+                        .setPositiveButton("Yes", (dialog, which) -> {
+                            Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                            context.startActivity(intent);
+                        })
+                        .setNegativeButton("No", (dialog, which) -> {
+                            dialog.dismiss();
+                        })
+                        .create()
+                        .show();
+                return;
+            }
+        }
+
+        Intent intent = new Intent(context, NotificationReceiver.class);
+        intent.putExtra("notification_id", notificationId);
+        intent.putExtra("title", title);
+        intent.putExtra("message", message);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+    }
+
+    public static void showDialog(int notificationId) {
         if (instance == null) {
             throw new IllegalStateException("NotificationService is not initialized. Call initInstance() first.");
         }
