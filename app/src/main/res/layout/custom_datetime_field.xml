@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="16dp">
+
+
+    <!-- Label for the TextField -->
+    <TextView
+        android:id="@+id/dt_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Date"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- TextField with icon -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Icon -->
+        <ImageView
+            android:id="@+id/dt_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:visibility="gone"
+            android:padding="8dp" />
+
+        <!-- EditText that will open DateTime picker -->
+        <EditText
+            android:id="@+id/dt_field"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Select date"
+            android:height="48dp"
+            android:inputType="none"
+            android:focusable="false"
+            android:clickable="true" />
+    </LinearLayout>
+
+</LinearLayout>

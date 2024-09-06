@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CustomEditText">
+        <attr name="labelText" format="string" />
+        <attr name="hint" format="string" />
+        <attr name="icon" format="reference" />
+        <attr name="etInputType" format="string" />
+        <attr name="etImeOption" format="string" />
+        <attr name="etSingleLine" format="boolean" />
+    </declare-styleable>
+    <declare-styleable name="CustomDropdown">
+        <attr name="dropdownLabelText" format="string" />
+        <attr name="dropdownHint" format="string" />
+        <attr name="dropdownIcon" format="reference" />
+    </declare-styleable>
+    <declare-styleable name="CustomDatetimeField">
+        <attr name="dtLabel" format="string" />
+        <attr name="dtHint" format="string" />
+        <attr name="dtIcon" format="reference" />
+    </declare-styleable>
+</resources>
+
