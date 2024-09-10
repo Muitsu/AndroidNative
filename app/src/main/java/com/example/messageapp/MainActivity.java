@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
             NotificationService.showScheduled(1, "Scheduled Notification", "This will show after 10 seconds", triggerAtMillis);
 
         });
+        binding.btnOpenList.setOnClickListener(v -> Navigator.push(this, FourthScreen.class));
     }
 
     @Override
