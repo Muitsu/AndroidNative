@@ -68,6 +68,24 @@ public class ApiClient {
         });
     }
 
+    public void postForBinary(String endpoint, JsonObject body, Map<String, String> headers, boolean includeToken, OnPre pre, OnBinarySuccess onSuccess, OnFail onFailed) {
+        runOnMainThread(pre::onPreExecute);
+        final String token = getAuthToken(includeToken);
+        final Map<String, String> mHeader = mergeHeaders(headers, token);
+        executorService.execute(() -> {
+            try {
+                byte[] result = executeRequestWithBodyForBinary("POST", baseUrl + endpoint, body, mHeader);
+                if (result != null) {
+                    runOnMainThread(() -> onSuccess.onSuccess(result));
+                } else {
+                    runOnMainThread(() -> onFailed.onFailure(new IOException("No data received")));
+                }
+            } catch (IOException e) {
+                runOnMainThread(() -> onFailed.onFailure(e));
+            }
+        });
+    }
+
     // Asynchronous PUT request
     public void put(String endpoint, JsonObject body, Map<String, String> headers, boolean includeToken, OnPre pre, OnPost onSuccess, OnFail onFailed) {
         runOnMainThread(pre::onPreExecute);
@@ -115,6 +133,9 @@ public class ApiClient {
     //Execute on Background
     private String executeRequestWithBody(String methodType, String url, JsonObject body, Map<String, String> headers) throws IOException {
         MediaType JSON = MediaType.get("application/json; charset=utf-8");
+        if (body == null) {
+            body = new JsonObject();
+        }
         RequestBody requestBody = RequestBody.create(JSON, body.toString());
 
         //Http Request Builder
@@ -141,6 +162,53 @@ public class ApiClient {
 
         Request request = requestBuilder.build();
         return executeRequest(request);
+    }
+
+    // The executeRequestWithBodyForBinary method to handle binary responses
+    private byte[] executeRequestWithBodyForBinary(String methodType, String url, JsonObject body, Map<String, String> headers) throws IOException {
+        MediaType JSON = MediaType.get("application/json");
+        if (body == null) {
+            body = new JsonObject();
+        }
+        RequestBody requestBody = RequestBody.create(JSON, body.toString());
+
+        //Http Request Builder
+        Request.Builder requestBuilder = new Request.Builder().url(url);
+
+        //Http Add Header
+        if (headers != null) {
+            for (Map.Entry<String, String> header : headers.entrySet()) {
+                requestBuilder.addHeader(header.getKey(), header.getValue());
+            }
+        }
+
+        switch (methodType) {
+            case "POST":
+                requestBuilder.post(requestBody);
+                break;
+            case "PUT":
+                requestBuilder.put(requestBody);
+                break;
+            case "DELETE":
+                requestBuilder.delete(requestBody);
+                break;
+        }
+
+        Request request = requestBuilder.build();
+        return executeRequestForBinary(request);
+    }
+
+    // Modify this method in ApiClient
+    private byte[] executeRequestForBinary(Request request) throws IOException {
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                // Return the binary data (PDF content)
+                return response.body().bytes();
+            } else {
+                Log.e(TAG, "Request failed with code: " + response.code() + " and message: " + response.message());
+                return null;
+            }
+        }
     }
 
     //Execute on Background
@@ -170,7 +238,7 @@ public class ApiClient {
     String getAuthToken(boolean includeToken) {
         if (!includeToken) return null;
         // Retrieve and return the token from preferences
-        return null;
+        return "";
     }
 
     //Interceptor between UI thread and Background
@@ -191,4 +259,7 @@ public class ApiClient {
         void onFailure(Exception e);
     }
 
+    public interface OnBinarySuccess {
+        void onSuccess(byte[] responseData);
+    }
 }

@@ -6,20 +6,21 @@ import com.example.messageapp.retrofit_service.UserModel;
 public class ProfileRepository {
     final static ApiClient client = new ApiClient();
 
-    public static void getProfile(ApiUtil.Pre pre, ApiUtil.Success<UserModel.User> success, ApiUtil.Error error) {
+    public static void getProfile(ApiUtil<UserModel.User> callback) {
 
         client.get("/users", null, false,
                 () -> {
-                    pre.onPreExecute();
+                    callback.pre.onPreExecute();
                 }, (response) -> {
                     try {
                         UserModel.User data = UserModel.User.fromJson(response);
-                        success.onSuccess(data);
+                        callback.success.onSuccess(data);
                     } catch (Exception e) {
-                        error.onError(e.toString());
+                        callback.error.onError(e.toString());
                     }
                 }, (fail) -> {
-                    error.onError(fail.toString());
-                });
+                    callback.error.onError(fail.toString());
+                }
+        );
     }
 }

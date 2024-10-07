@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 
 import android.widget.Toast;
 
+import com.example.messageapp.api_service.ApiUtil;
 import com.example.messageapp.notification.NotificationService;
 import com.example.messageapp.retrofit_service.UserModel;
 import com.example.messageapp.retrofit_service.UserRepository;
@@ -56,13 +57,13 @@ public class MainActivity extends AppCompatActivity {
         });
         binding.btnProfile.setOnClickListener(v -> {
             ProfileRepository.getProfile(
-                    () -> {
+                    new ApiUtil<>(() -> {
                         //TODO PRE EXECUTE
                     }, (success) -> {
                         //TODO ON SUCCESS
                     }, (errorMessage) -> {
                         //TODO ON FAILED
-                    });
+                    }));
 
         });
 
