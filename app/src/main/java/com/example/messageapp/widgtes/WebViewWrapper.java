@@ -4,7 +4,9 @@ package com.example.messageapp.widgtes;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.webkit.ConsoleMessage;
 import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -90,6 +92,38 @@ public class WebViewWrapper {
         }
     }
 
+    @SuppressLint("JavascriptInterface")
+    public void setJavaScriptListener(String name, JavaScriptChannel channel) {
+        webView.addJavascriptInterface(new Object() {
+            public void sendMessage(String message) {
+                if (channel != null) {
+                    channel.onJavaScriptChannel(message);
+                }
+            }
+        }, name);
+    }
+
+    public void setConsoleMessageListener(JavaScriptConsoleMessage message) {
+        // Set custom WebChromeClient to capture console messages
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                message.onJavaScriptConsoleMessage(consoleMessage.message());
+                return true;
+            }
+        });
+    }
+
+    // Callback addJavaScriptChannel
+    public interface JavaScriptChannel {
+        void onJavaScriptChannel(String message);
+    }
+
+    // Callback addJavaScriptChannel
+    public interface JavaScriptConsoleMessage {
+        void onJavaScriptConsoleMessage(String message);
+    }
+
     // Method to enable JavaScript
     public void enableJavaScript(boolean enable) {
         if (webView != null) {
@@ -109,6 +143,7 @@ public class WebViewWrapper {
         void onJavascriptResponse(String response);
     }
 
+
     // Clean up the WebView
     public void destroyWebView() {
         if (webView != null) {
@@ -117,4 +152,17 @@ public class WebViewWrapper {
             webView.destroy();
         }
     }
+
+    // Method to check if the WebView can go back
+    public boolean canGoBack() {
+        return webView != null && webView.canGoBack();
+    }
+
+    // Method to navigate back in WebView
+    public void goBack() {
+        if (webView != null && canGoBack()) {
+            webView.goBack();
+        }
+    }
+
 }
