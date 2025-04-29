@@ -1,4 +1,4 @@
-package com.example.messageapp;
+package com.example.messageapp.widgtes;
 
 
 import android.util.Log;

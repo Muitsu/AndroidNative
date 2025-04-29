@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.example.messageapp.AppLog;
+import com.example.messageapp.widgtes.AppLog;
 
 public class MainViewModel extends ViewModel {
     private static final String TAG = "MainActivity";

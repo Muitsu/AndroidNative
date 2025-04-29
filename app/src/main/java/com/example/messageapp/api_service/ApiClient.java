@@ -1,12 +1,18 @@
 package com.example.messageapp.api_service;
 
+import android.content.Context;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
 import com.google.gson.JsonObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +23,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class ApiClient {
     private static final String TAG = "ApiClient";
@@ -68,23 +75,6 @@ public class ApiClient {
         });
     }
 
-    public void postForBinary(String endpoint, JsonObject body, Map<String, String> headers, boolean includeToken, OnPre pre, OnBinarySuccess onSuccess, OnFail onFailed) {
-        runOnMainThread(pre::onPreExecute);
-        final String token = getAuthToken(includeToken);
-        final Map<String, String> mHeader = mergeHeaders(headers, token);
-        executorService.execute(() -> {
-            try {
-                byte[] result = executeRequestWithBodyForBinary("POST", baseUrl + endpoint, body, mHeader);
-                if (result != null) {
-                    runOnMainThread(() -> onSuccess.onSuccess(result));
-                } else {
-                    runOnMainThread(() -> onFailed.onFailure(new IOException("No data received")));
-                }
-            } catch (IOException e) {
-                runOnMainThread(() -> onFailed.onFailure(e));
-            }
-        });
-    }
 
     // Asynchronous PUT request
     public void put(String endpoint, JsonObject body, Map<String, String> headers, boolean includeToken, OnPre pre, OnPost onSuccess, OnFail onFailed) {
@@ -111,6 +101,56 @@ public class ApiClient {
                 String result = executeRequestWithBody("DELETE", baseUrl + endpoint, body, mHeader);
                 runOnMainThread(() -> onSuccess.onSuccess(result));
             } catch (IOException e) {
+                runOnMainThread(() -> onFailed.onFailure(e));
+            }
+        });
+    }
+
+    // Asynchronous POST request for File
+    public void postForFile(Context context, String endpoint, JsonObject body, Map<String, String> headers, boolean includeToken, OnPre pre, OnBinarySuccess onSuccess, OnFail onFailed) {
+        runOnMainThread(pre::onPreExecute);
+        final String token = getAuthToken(includeToken);
+        final Map<String, String> mHeader = mergeHeaders(headers, token);
+        executorService.execute(() -> {
+            try {
+                File result = executeRequestWithBodyForFile(context, "POST", baseUrl + endpoint, body, mHeader);
+                if (result != null) {
+                    runOnMainThread(() -> onSuccess.onSuccess(result));
+                } else {
+                    runOnMainThread(() -> onFailed.onFailure(new IOException("No data received")));
+                }
+            } catch (IOException e) {
+                runOnMainThread(() -> onFailed.onFailure(e));
+            }
+        });
+    }
+
+    // Asynchronous GET request for File
+    public void getForFile(Context context, String endpoint, Map<String, String> headers, boolean includeToken, OnPre pre, OnBinarySuccess onSuccess, OnFail onFailed) {
+        //runOnMainThread(() -> pre.onPreExecute());
+        runOnMainThread(pre::onPreExecute);
+        final String token = getAuthToken(includeToken);
+        final Map<String, String> mHeader = mergeHeaders(headers, token);
+        executorService.execute(() -> {
+            try {
+                File result = executeGetFile(context, baseUrl + endpoint, mHeader);
+                runOnMainThread(() -> onSuccess.onSuccess(result));
+            } catch (IOException | ApiException e) {
+                runOnMainThread(() -> onFailed.onFailure(e));
+            }
+        });
+    }
+
+    public void getForFileCustomUrl(Context context, String url, Map<String, String> headers, boolean includeToken, OnPre pre, OnBinarySuccess onSuccess, OnFail onFailed) {
+        //runOnMainThread(() -> pre.onPreExecute());
+        runOnMainThread(pre::onPreExecute);
+        final String token = getAuthToken(includeToken);
+        final Map<String, String> mHeader = mergeHeaders(headers, token);
+        executorService.execute(() -> {
+            try {
+                File result = executeGetFile(context, url, mHeader);
+                runOnMainThread(() -> onSuccess.onSuccess(result));
+            } catch (IOException | ApiException e) {
                 runOnMainThread(() -> onFailed.onFailure(e));
             }
         });
@@ -164,8 +204,20 @@ public class ApiClient {
         return executeRequest(request);
     }
 
-    // The executeRequestWithBodyForBinary method to handle binary responses
-    private byte[] executeRequestWithBodyForBinary(String methodType, String url, JsonObject body, Map<String, String> headers) throws IOException {
+    //Execute on Background
+    private String executeRequest(Request request) throws IOException {
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                return response.body().string();
+            } else {
+                Log.e(TAG, "Request failed with code: " + response.code() + " and message: " + response.message());
+                return null;
+            }
+        }
+    }
+
+    // The executeRequestWithBodyForFile method to handle binary responses
+    private File executeRequestWithBodyForFile(Context context, String methodType, String url, JsonObject body, Map<String, String> headers) throws IOException {
         MediaType JSON = MediaType.get("application/json");
         if (body == null) {
             body = new JsonObject();
@@ -195,15 +247,14 @@ public class ApiClient {
         }
 
         Request request = requestBuilder.build();
-        return executeRequestForBinary(request);
+        return executeRequestForFile(context, request);
     }
 
-    // Modify this method in ApiClient
-    private byte[] executeRequestForBinary(Request request) throws IOException {
+    private File executeRequestForFile(Context context, Request request) throws IOException {
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful() && response.body() != null) {
                 // Return the binary data (PDF content)
-                return response.body().bytes();
+                return writeResponseBodyToDisk(context, response.body(), "document");
             } else {
                 Log.e(TAG, "Request failed with code: " + response.code() + " and message: " + response.message());
                 return null;
@@ -211,15 +262,77 @@ public class ApiClient {
         }
     }
 
-    //Execute on Background
-    private String executeRequest(Request request) throws IOException {
-        try (Response response = client.newCall(request).execute()) {
-            if (response.isSuccessful() && response.body() != null) {
-                return response.body().string();
-            } else {
-                Log.e(TAG, "Request failed with code: " + response.code() + " and message: " + response.message());
-                return null;
+    private File executeGetFile(Context context, String url, Map<String, String> headers) throws IOException, ApiException {
+        //Http Request Builder for GET
+        Request.Builder requestBuilder = new Request.Builder().url(url).get();
+        //Http Add Header
+        if (headers != null) {
+            for (Map.Entry<String, String> header : headers.entrySet()) {
+                requestBuilder.addHeader(header.getKey(), header.getValue());
             }
+        }
+        Request request = requestBuilder.build();
+        return executeRequestForFile(context, request);
+    }
+
+
+    //Convert body into file
+    private static File writeResponseBodyToDisk(Context context, ResponseBody body, String name) {
+        try {
+            File file;
+            OutputStream outputStream = null;
+            InputStream inputStream = null;
+
+            try {
+                // Choose file location based on Android version
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    // Scoped Storage: App-specific directory
+                    File appSpecificDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+                    file = new File(appSpecificDir, name + ".pdf");
+                } else {
+                    // Legacy storage: Public Downloads directory
+                    File publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                    file = new File(publicDir, name + ".pdf");
+                }
+
+                // Create necessary directories if they don't exist
+                if (file.getParentFile() != null && !file.getParentFile().exists()) {
+                    file.getParentFile().mkdirs();
+                }
+
+                // Write the file
+                byte[] fileReader = new byte[4096];
+                long fileSize = body.contentLength();
+                long fileSizeDownloaded = 0;
+
+                inputStream = body.byteStream();
+                outputStream = new FileOutputStream(file);
+
+                while (true) {
+                    int read = inputStream.read(fileReader);
+                    if (read == -1) {
+                        break;
+                    }
+                    outputStream.write(fileReader, 0, read);
+                    fileSizeDownloaded += read;
+                }
+
+                outputStream.flush();
+                return file;
+            } catch (IOException e) {
+                Log.d("ApiClient :", e.toString());
+                return null;
+            } finally {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+                if (outputStream != null) {
+                    outputStream.close();
+                }
+            }
+        } catch (IOException e) {
+            Log.d("ApiClient writeResponseBodyToDisk :", e.toString());
+            return null;
         }
     }
 
@@ -260,6 +373,12 @@ public class ApiClient {
     }
 
     public interface OnBinarySuccess {
-        void onSuccess(byte[] responseData);
+        void onSuccess(File responseData);
+    }
+
+    public class ApiException extends Exception {
+        public ApiException(String message) {
+            super(message);
+        }
     }
 }

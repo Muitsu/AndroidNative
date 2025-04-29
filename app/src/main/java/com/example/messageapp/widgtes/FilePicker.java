@@ -10,6 +10,7 @@ import android.os.Looper;
 import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.webkit.MimeTypeMap;
+import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class FilePicker {
 
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("*/*");
-        String[] mimeTypes = {"application/pdf", "application/msword", "image/jpeg", "image/png"};
+        String[] mimeTypes = {"application/pdf", "image/jpeg", "image/png"};
         intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
         activity.startActivityForResult(intent, PICK_FILE_REQUEST_CODE);
     }
@@ -105,6 +106,9 @@ public class FilePicker {
     }
 
     public static String convertToBase64(byte[] fileBytes) {
+        if (fileBytes == null) {
+            return "";
+        }
         return Base64.encodeToString(fileBytes, Base64.NO_WRAP);
     }
 
@@ -122,3 +126,31 @@ public class FilePicker {
         return outputStream.toByteArray();
     }
 }
+
+
+//********************** HOW TO USE **********************
+
+// private void openFilePicker(int index) {
+//    FilePicker.open(this,
+//            (fileName, mimeType, base64, fileBytes) -> {
+//                // Use both base64 and byte array
+//                if (dlyProvider.isEdit()) {
+//                    int docId = ApplicationHistoryVM.getInstance().getDailyDetail(this).getDocuments().get(index - 1).getId();
+//                    dlyProvider.addUpdateAttachment(index, docId, fileName, base64, mimeType, fileBytes);
+//                } else {
+//                    dlyProvider.addAttachment(index, fileName, base64, mimeType, fileBytes);
+//                }
+//            },
+//            errorMessage -> {
+//                Toast.makeText(this, "Error: " + errorMessage, Toast.LENGTH_SHORT).show();
+//            }
+//    );
+//}
+//
+//@Override
+//protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//    super.onActivityResult(requestCode, resultCode, data);
+//
+//    // Handle file picker result
+//    FilePicker.handleActivityResult(this, requestCode, resultCode, data);
+//}

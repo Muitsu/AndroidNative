@@ -18,6 +18,8 @@ import com.example.messageapp.navigation.Navigator;
 
 import com.example.messageapp.permission_manager.PermissionManager;
 import com.example.messageapp.view_model.MainViewModel;
+import com.example.messageapp.widgtes.AppLog;
+import com.example.messageapp.widgtes.ToastManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -59,10 +61,13 @@ public class MainActivity extends AppCompatActivity {
             ProfileRepository.getProfile(
                     new ApiUtil<>(() -> {
                         //TODO PRE EXECUTE
+                        ToastManager.showToast(this, "Fetch Profile ...");
                     }, (success) -> {
                         //TODO ON SUCCESS
+                        ToastManager.showToast(this, success.toJson());
                     }, (errorMessage) -> {
                         //TODO ON FAILED
+                        ToastManager.showToast(this, "Error :" + errorMessage);
                     }));
 
         });

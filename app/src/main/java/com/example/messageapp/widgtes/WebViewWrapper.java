@@ -8,12 +8,16 @@ import android.webkit.ConsoleMessage;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class WebViewWrapper {
     private final WebView webView;
+    private WebSettings webSettings;
     private OnUrlChangeListener onUrlChangeListener;
+    private OnPageStartedListener onPageStartedListener;
+    private OnPageFinishedListener onPageFinishedListener;
 
     // Constructor that initializes WebView
     public WebViewWrapper(Context context, WebView webView) {
@@ -26,16 +30,39 @@ public class WebViewWrapper {
         void onUrlChanged(String newUrl);
     }
 
+    // New Interfaces
+    public interface OnPageStartedListener {
+        void onPageStarted();
+    }
+
+    public interface OnPageFinishedListener {
+        void onPageFinished();
+    }
+
+
     // Method to set the URL change listener (like onSetClick)
     public void setOnUrlChangedListener(OnUrlChangeListener listener) {
         this.onUrlChangeListener = listener;
+    }
+
+    public void setOnPageStarted(OnPageStartedListener listener) {
+        this.onPageStartedListener = listener;
+    }
+
+    public void setOnPageFinished(OnPageFinishedListener listener) {
+        this.onPageFinishedListener = listener;
+    }
+
+    public WebSettings getWebSettings() {
+        return webSettings;
     }
 
     // Initializes the basic WebView settings
     @SuppressLint("SetJavaScriptEnabled")
     private void initializeSettings() {
         // Enable JavaScript
-        webView.getSettings().setJavaScriptEnabled(true);
+        webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
 
         // Set a custom WebViewClient to handle page load events and URL changes
         webView.setWebViewClient(new WebViewClient() {
@@ -57,6 +84,9 @@ public class WebViewWrapper {
                 if (onUrlChangeListener != null) {
                     onUrlChangeListener.onUrlChanged(url);
                 }
+                if (onPageStartedListener != null) {
+                    onPageStartedListener.onPageStarted();
+                }
             }
 
             @Override
@@ -65,6 +95,9 @@ public class WebViewWrapper {
                 // Notify listener when the page finishes loading
                 if (onUrlChangeListener != null) {
                     onUrlChangeListener.onUrlChanged(url);
+                }
+                if (onPageFinishedListener != null) {
+                    onPageFinishedListener.onPageFinished();
                 }
             }
         });
@@ -109,7 +142,10 @@ public class WebViewWrapper {
             @Override
             public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
                 message.onJavaScriptConsoleMessage(consoleMessage.message());
-                return true;
+                return true; // Return true to indicate that we have handled the message
+//                Log.d("WebViewConsole", "Message: " + consoleMessage.message() +
+//                        " -- From line: " + consoleMessage.lineNumber() +
+//                        " of " + consoleMessage.sourceId());
             }
         });
     }

@@ -1,6 +1,5 @@
 package com.example.messageapp.api_service;
 
-import com.example.messageapp.AppLog;
 import com.example.messageapp.retrofit_service.UserModel;
 
 public class ProfileRepository {
