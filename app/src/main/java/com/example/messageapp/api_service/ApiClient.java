@@ -39,7 +39,11 @@ public class ApiClient {
     }};
 
     public ApiClient() {
-        client = new OkHttpClient();
+        client = new OkHttpClient.Builder()
+                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .build();
         executorService = Executors.newSingleThreadExecutor();
         mainHandler = new Handler(Looper.getMainLooper());
     }
@@ -256,7 +260,14 @@ public class ApiClient {
                 // Return the binary data (PDF content)
                 return writeResponseBodyToDisk(context, response.body(), "document");
             } else {
-                Log.e(TAG, "Request failed with code: " + response.code() + " and message: " + response.message());
+                String errorBody = null;
+                if (response.body() != null) {
+                    errorBody = response.body().string();  // Read error body as string
+                }
+                Log.e(TAG, "Request failed with code: " + response.code() +
+                        ", message: " + response.message() +
+                        ", error body: " + errorBody);
+                // Optionally throw or handle the error further
                 return null;
             }
         }
